@@ -20,6 +20,7 @@ import {
   MoveNativesSignature,
   MoveSignature,
   IncreaseThirstSignature,
+  Controls,
 } from './types';
 
 class Game {
@@ -62,18 +63,26 @@ class Game {
     };
 
     this.choices = [
-      { name: 'Ahead moderate speed', key: '1', action: this.go },
-      { name: 'Ahead full speed', key: '2', action: this.goFast },
-      { name: 'Drink from your canteen', key: '3', action: this.drink },
-      { name: 'Stop and rest', key: '4', action: this.stopAndRest },
+      { name: 'Ahead moderate speed', key: Controls.Go, action: this.go },
+      {
+        name: 'Ahead full speed',
+        key: Controls.GoFast,
+        action: () => this.go(true),
+      },
+      {
+        name: 'Drink from your canteen',
+        key: Controls.Drink,
+        action: this.drink,
+      },
+      { name: 'Stop and rest', key: Controls.Rest, action: this.stopAndRest },
       {
         name: 'Status check',
-        key: '5',
+        key: Controls.StatusCheck,
         action: this.checkStatus,
       },
       {
         name: 'Quit',
-        key: 'Q',
+        key: Controls.Quit,
         action: () => this.finish(true),
       },
     ];
@@ -91,11 +100,15 @@ class Game {
   };
 
   go: GoSignature = fast => {
+    const milesMoved = this.status.miles + this.move({ natives: false, fast });
+
     this.status = {
-      miles: this.status.miles + this.move({ natives: false, fast }),
+      miles: milesMoved,
       camelTiredness: this.status.camelTiredness + (fast ? 2 : 1),
       thirst: this.increaseThirst(),
     };
+
+    this.printMessage(`You moved ${milesMoved}`);
   };
 
   drink: DrinkSignature = () => {
@@ -118,7 +131,10 @@ class Game {
   };
 
   moveNatives: MoveNativesSignature = () => {
-    this.nativesMiles += this.move({ fast: false, natives: true });
+    const milesMoved = this.move({ fast: false, natives: true });
+    this.nativesMiles += milesMoved;
+
+    this.printMessage(`The natives moved ${milesMoved}`);
   };
 
   printMessage: PrintMessageSignature = msg => {
@@ -177,15 +193,15 @@ class Game {
     }
   };
 
-  gameLoop: GameLoopSignature = () => {
+  gameLoop: GameLoopSignature = async () => {
+    let answer: string;
     do {
       this.displayChoices();
-      this.prompt().then(answer => {
-        this.choices
-          .find(choice => choice.key === answer.toUpperCase())!
-          .action();
-      });
-      if (!this.gameOver) this.moveNatives();
+      answer = await this.prompt();
+      this.choices
+        .find(choice => choice.key === answer.toUpperCase())!
+        .action();
+      if (!this.gameOver && answer !== Controls.StatusCheck) this.moveNatives();
     } while (!this.gameOver);
   };
 

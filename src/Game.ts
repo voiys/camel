@@ -21,6 +21,7 @@ import {
   MoveSignature,
   IncreaseThirstSignature,
   Controls,
+  ExitSignature,
 } from './types';
 
 class Game {
@@ -34,7 +35,6 @@ class Game {
   private lossConditions: LossConditions;
   private nativesSpeed: number;
   private milesToGoal: number;
-  private nativesMiles: number;
   private playerSpeed: number;
 
   constructor(config: Config) {
@@ -47,13 +47,12 @@ class Game {
     this.lossConditions = {
       camelTiredness: 7,
       thirst: 5,
-      milesAhead: 0,
     };
 
     this.gameOver = false;
     this.win = false;
-    this.nativesMiles = 0;
     this.status = {
+      nativesMiles: 0,
       camelTiredness: 0,
       miles: 20,
       thirst: 0,
@@ -83,7 +82,7 @@ class Game {
       {
         name: 'Quit',
         key: Controls.Quit,
-        action: () => this.finish(true),
+        action: this.exit,
       },
     ];
   }
@@ -104,40 +103,37 @@ class Game {
     const thirstIncreased = this.increaseThirst();
     const camelTirednessIncreased = this.status.camelTiredness + (fast ? 2 : 1);
 
-    this.status = {
-      miles: milesMoved,
-      camelTiredness: camelTirednessIncreased,
-      thirst: thirstIncreased,
-    };
+    this.status.miles += milesMoved;
+    this.status.camelTiredness += camelTirednessIncreased;
+    this.status.thirst += thirstIncreased;
 
     this.printMessage(`You moved ${milesMoved}.`);
   };
 
   drink: DrinkSignature = () => {
-    this.status = {
-      ...this.status,
-      thirst: 0,
-    };
+    if (this.resources.waterInCanteen > 0) {
+      this.status.thirst = 0;
 
-    this.resources = {
-      waterInCanteen: this.resources.waterInCanteen - 1,
-    };
+      this.resources.waterInCanteen -= 1;
+
+      this.printMessage('You take a sip from your trusty canteen.');
+    } else {
+      this.printMessage('You have no water left in your canteen.');
+    }
   };
 
   stopAndRest: StopAndRestSignature = () => {
     const restedBy = Math.floor(Math.random() * 3) + 1;
 
-    this.status = {
-      ...this.status,
-      camelTiredness: restedBy,
-    };
+    this.status.camelTiredness -= restedBy;
 
     this.printMessage(`You rested.`);
   };
 
   moveNatives: MoveNativesSignature = () => {
     const milesMoved = this.move({ fast: false, natives: true });
-    this.nativesMiles += milesMoved;
+
+    this.status.nativesMiles += milesMoved;
 
     this.printMessage(`The natives moved ${milesMoved}.`);
   };
@@ -169,7 +165,7 @@ class Game {
       `Water in canteen: ${this.resources.waterInCanteen} / ${this.maxWaterInCanteen}`,
       `Camel tiredness: ${this.status.camelTiredness} / ${this.lossConditions.camelTiredness}`,
       `Thirst: ${this.status.thirst} / ${this.lossConditions.thirst}`,
-      `Miles ahead of natives: ${this.status.miles - this.nativesMiles}`,
+      `Miles ahead of natives: ${this.status.miles - this.status.nativesMiles}`,
       `Miles to go: ${this.milesToGoal - this.status.miles}`,
     ];
 
@@ -188,14 +184,15 @@ class Game {
     return answer;
   };
 
-  finish: FinishSignature = exit => {
-    if (exit) {
-      this.printMessage('Bye!');
-      closeTerminalPrompt();
-      process.exit();
-    } else {
-      this.gameOver = true;
-    }
+  exit: ExitSignature = () => {
+    this.printMessage('Bye!');
+    closeTerminalPrompt();
+    process.exit();
+  };
+
+  finish: FinishSignature = win => {
+    this.gameOver = true;
+    this.win = win;
   };
 
   gameLoop: GameLoopSignature = async () => {
@@ -206,7 +203,16 @@ class Game {
       this.choices
         .find(choice => choice.key === answer.toUpperCase())!
         .action();
-      if (!this.gameOver && answer !== Controls.StatusCheck) this.moveNatives();
+      const camelIsTooTired =
+        this.status.camelTiredness >= this.lossConditions.camelTiredness;
+      const playerIsTooThirsty =
+        this.status.thirst >= this.lossConditions.thirst;
+      const nativesCaughtUp = this.status.miles <= this.status.nativesMiles;
+      if (camelIsTooTired || playerIsTooThirsty || nativesCaughtUp) {
+        this.finish(false);
+      } else if (answer !== Controls.StatusCheck) {
+        this.moveNatives();
+      }
     } while (!this.gameOver);
   };
 

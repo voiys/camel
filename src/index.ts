@@ -1,4 +1,4 @@
-import { config } from './constants';
+import { config } from './config';
 import { Game } from './Game';
 
 const main = () => {

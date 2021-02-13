@@ -4,7 +4,8 @@ type PrintMessageSignature = (msg: string) => any;
 type DisplayIntroMessageSignature = NoArguments;
 type DisplayChoicesSignature = NoArguments;
 type PromptSignature = NoArguments<Promise<string>>;
-type FinishSignature = (exit?: boolean) => any;
+type FinishSignature = (win: boolean) => any;
+type ExitSignature = NoArguments;
 type DisplayEndMessageSignature = NoArguments;
 type StartSignature = NoArguments;
 type CheckStatusSignature = NoArguments;
@@ -32,4 +33,5 @@ export {
   MoveNativesSignature,
   MoveSignature,
   IncreaseThirstSignature,
+  ExitSignature,
 };

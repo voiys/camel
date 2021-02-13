@@ -14,12 +14,12 @@ interface Status {
   miles: number;
   camelTiredness: number;
   thirst: number;
+  nativesMiles: number;
 }
 
 interface LossConditions {
   camelTiredness: number;
   thirst: number;
-  milesAhead: number;
 }
 
 const enum Controls {

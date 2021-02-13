@@ -96,19 +96,21 @@ class Game {
   };
 
   increaseThirst: IncreaseThirstSignature = () => {
-    return Math.random() > 0.5 ? 2 : 1;
+    return Math.floor(Math.random() * 2) + 1;
   };
 
   go: GoSignature = fast => {
     const milesMoved = this.status.miles + this.move({ natives: false, fast });
+    const thirstIncreased = this.increaseThirst();
+    const camelTirednessIncreased = this.status.camelTiredness + (fast ? 2 : 1);
 
     this.status = {
       miles: milesMoved,
-      camelTiredness: this.status.camelTiredness + (fast ? 2 : 1),
-      thirst: this.increaseThirst(),
+      camelTiredness: camelTirednessIncreased,
+      thirst: thirstIncreased,
     };
 
-    this.printMessage(`You moved ${milesMoved}`);
+    this.printMessage(`You moved ${milesMoved}.`);
   };
 
   drink: DrinkSignature = () => {
@@ -123,18 +125,21 @@ class Game {
   };
 
   stopAndRest: StopAndRestSignature = () => {
+    const restedBy = Math.floor(Math.random() * 3) + 1;
+
     this.status = {
       ...this.status,
-      camelTiredness: 0,
-      thirst: this.increaseThirst(),
+      camelTiredness: restedBy,
     };
+
+    this.printMessage(`You rested.`);
   };
 
   moveNatives: MoveNativesSignature = () => {
     const milesMoved = this.move({ fast: false, natives: true });
     this.nativesMiles += milesMoved;
 
-    this.printMessage(`The natives moved ${milesMoved}`);
+    this.printMessage(`The natives moved ${milesMoved}.`);
   };
 
   printMessage: PrintMessageSignature = msg => {

@@ -22,4 +22,13 @@ interface LossConditions {
   milesAhead: number;
 }
 
-export { Choice, Choices, Resources, Status, LossConditions };
+const enum Controls {
+  Go = '1',
+  GoFast = '2',
+  Drink = '3',
+  Rest = '4',
+  StatusCheck = '5',
+  Quit = 'Q',
+}
+
+export { Choice, Choices, Controls, Resources, Status, LossConditions };
